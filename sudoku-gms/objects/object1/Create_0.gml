@@ -40,13 +40,13 @@ grid_set_valid_at = function(pos){
 		}
 	}
 	
-	//check block
+	//check quadrant
 	var startX = floor(myPx/grid_qw)*grid_qw;
 	var endX = startX+2;
 	var startY = floor(myPy/grid_qh)*grid_qh;
 	var endY = startY+2;
-	for(var i = startX; i < endX; ++i){
-		for(var j = startY; j < endY; ++j){
+	for(var i = startX; i <= endX; ++i){
+		for(var j = startY; j <= endY; ++j){
 			if(i != myPx || j != myPy){
 				ds_list_add(forbidden, grid[# i, j]);
 			}
@@ -57,6 +57,9 @@ grid_set_valid_at = function(pos){
 	var val = 1;
 	while(ds_list_find_index(forbidden, val) > -1){
 		val += 1;
+	}
+	if(val >= grid_w){
+		val = 0;	
 	}
 	grid[# pos_x(pos), pos_y(pos)] = val;
 	

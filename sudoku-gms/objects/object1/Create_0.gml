@@ -19,24 +19,29 @@ pos_y = function(i){
 grid_pos = function(i){
 	return grid[# pos_x(i), pos_y(i)];
 }
-grid_set_valid_at = function(pos){
-	//iterate through grid to get forbidden numbers
-	var forbidden = ds_list_create();
-	ds_list_clear(forbidden);
-	
+//look for forbidden values at pos
+grid_get_forbidden_at = function(forbidden, pos){
 	//check row
 	var myPx = pos_x(pos);
 	var myPy = pos_y(pos);
 	for(var i = 0; i < grid_w; ++i){
 		if(i != myPx){
-			ds_list_add(forbidden, grid[# i, myPy]);
+			var value = grid[# i, myPy].val;
+			if(value > 0){
+				if(ds_list_find_index(forbidden, value) < 0)
+					ds_list_add(forbidden, value);
+			}
 		}
 	}
 	
 	//check column
 	for(var i = 0; i < grid_h; ++i){
 		if(i != myPy){
-			ds_list_add(forbidden, grid[# myPx, i]);
+			var value = grid[# myPx, i].val;
+			if(value > 0){
+				if(ds_list_find_index(forbidden, value) < 0)
+					ds_list_add(forbidden, value);
+			}
 		}
 	}
 	
@@ -48,26 +53,76 @@ grid_set_valid_at = function(pos){
 	for(var i = startX; i <= endX; ++i){
 		for(var j = startY; j <= endY; ++j){
 			if(i != myPx || j != myPy){
-				ds_list_add(forbidden, grid[# i, j]);
+				var value = grid[# i, j].val;
+				if(value > 0){
+					if(ds_list_find_index(forbidden, value) < 0)
+						ds_list_add(forbidden, value);
+				}
 			}
 		}
+	}	
+}
+//iterate throug grid searching for a 100% reliable match
+grid_search_reliable = function(){
+	var broke = false;
+	var pos = -1;
+	for(var i = 0; i < grid_w; ++i){
+		for(var j = 0; j < grid_h; ++j){
+			pos += 1;
+			var num = grid[# i, j];
+			if(!num.fixed){
+				var forbidden = ds_list_create();
+				ds_list_clear(forbidden);
+				
+				grid_get_forbidden_at(forbidden, pos);
+				//if there is only one possible value to use
+				if(ds_list_size(forbidden) == grid_w-1){
+					var value = 1;
+					while(ds_list_find_index(forbidden, value) > -1){
+						value += 1;
+					}
+					if(value <= grid_w){
+						grid[# pos_x(pos), pos_y(pos)] = {
+							val: value,
+							fixed: true
+						}
+						broke = true;
+					}
+				}
+				ds_list_destroy(forbidden);
+				if(broke)
+					break;
+			}
+		}
+		if(broke)
+			break;
 	}
+}
+grid_set_valid_at = function(pos){
+	//iterate through grid to get forbidden numbers
+	var forbidden = ds_list_create();
+	ds_list_clear(forbidden);
+	
+	grid_get_forbidden_at(forbidden, pos);
 	
 	//insert a value that isn't forbidden
-	var val = 1;
-	while(ds_list_find_index(forbidden, val) > -1){
-		val += 1;
+	var value = 1;
+	while(ds_list_find_index(forbidden, value) > -1){
+		value += 1;
 	}
-	if(val >= grid_w){
-		val = 0;	
+	if(value >= grid_w){
+		value = 0;	
 	}
-	grid[# pos_x(pos), pos_y(pos)] = val;
+	grid[# pos_x(pos), pos_y(pos)] = {
+		val: value,
+		fixed: false
+	}
 	
 	//clear DS from memory to avoid memory leaks
 	ds_list_destroy(forbidden);
 }
 
-iteration_time = room_speed/8;
+iteration_time = 1;//room_speed/8;
 populated_grid = false;
 population_pos = -1;
 
@@ -101,7 +156,10 @@ init_board = function(){
 	ds_grid_clear(grid, 0);
 	var leng = array_length(initial_board);
 	for(var i = 0; i < leng; ++i){
-		grid[# pos_x(i), pos_y(i)] = initial_board[i];
+		grid[# pos_x(i), pos_y(i)] = {
+			val: initial_board[i],
+			fixed: (initial_board[i] != 0)
+		}
 	}
 }
 init_board();
@@ -109,7 +167,7 @@ init_board();
 check_solution = function(){
 	var leng = array_length(solution_board);
 	for(var i = 0; i < leng; ++i){
-		if(grid[# pos_x(i), pos_y(i)] != solution_board[i]){
+		if(grid[# pos_x(i), pos_y(i)].val != solution_board[i]){
 			return false;
 		}
 	}

@@ -7,7 +7,7 @@ var imy = 46;
 draw_sprite(Sprite1, 0, mx-23, my-15);
 for(var i = 0; i < grid_w; ++i){
 	for(var j = 0; j < grid_h; ++j){
-		var num = grid[# i, j].val;
+		var num = grid[# i, j];
 		if(num != 0){
 			draw_text(mx+(imx*i), my+(imy*j), num);
 		}
